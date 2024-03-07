@@ -24,3 +24,5 @@ target_link_libraries(DbMigrationTool PRIVATE Qt${QT_VERSION_MAJOR}::Core)
 target_link_libraries(DbMigrationTool PRIVATE Qt${QT_VERSION_MAJOR}::Sql)
 
 target_compile_definitions(DbMigrationTool PRIVATE DBMIGRATIONTOOL_LIBRARY)
+
+target_include_directories(${PROJECT_NAME} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/")
