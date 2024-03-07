@@ -36,20 +36,16 @@ bool DbMigrationTool::open()
     return db.open();
 }
 
+void DbMigrationTool::close()
+{
+    db.close();
+}
+
 void DbMigrationTool::update()
 {
     QSqlError err;
     if (auto tables = db.tables(); tables.isEmpty()) {
-        m_firstInit = true;
-
-        db.transaction();
-        if (!addInfoTable(&err))
-            throw DbMigrationException(QString("Adding database metainfo table - failed: %1").arg(err.text()));
-
-        if (!addVersionRows(&err))
-            throw DbMigrationException(QString("Adding database metainfo table row - failed: %1").arg(err.text()));
-
-        db.commit();
+        addMetaInfo();
 
         if (!runBaselineScripts(&err))
             throw DbMigrationException(QString("Running baseline script - failed: %1").arg(err.text()));
@@ -60,6 +56,23 @@ void DbMigrationTool::update()
 
     if (!runMigrationScripts(&err))
         throw DbMigrationException(QString("Running migration scripts - failed: %1").arg(err.text()));
+}
+
+void DbMigrationTool::addMetaInfo()
+{
+    m_firstInit = true;
+
+    QSqlError err;
+
+    db.transaction();
+
+    if (!addInfoTable(&err))
+        throw DbMigrationException(QString("Adding database metainfo table - failed: %1").arg(err.text()));
+
+    if (!addVersionRows(&err))
+        throw DbMigrationException(QString("Adding database metainfo table row - failed: %1").arg(err.text()));
+
+    db.commit();
 }
 
 bool tryOpenFile(const QString &path) {
@@ -125,10 +138,11 @@ bool DbMigrationTool::runBaselineScripts(QSqlError *err)
 bool DbMigrationTool::runMigrationScripts(QSqlError *err)
 {
     auto iter = m_migrationPath.constBegin();
-    if (m_firstInit) {
+    const auto &version = getVersion();
+    if (m_firstInit || version == DbVersion()) {
         // Do nothing
     } else {
-        iter = m_migrationPath.constFind(getVersion());
+        iter = m_migrationPath.constFind(version);
         if (iter != m_migrationPath.constEnd())
             iter++;
     }
@@ -229,7 +243,7 @@ std::optional<int> DbMigrationTool::getVersion(const QString &version)
 bool DbMigrationTool::addInfoTable(QSqlError *err)
 {
     QSqlQuery query(db);
-    query.prepare("CREATE TABLE " + QString(DB_INFO_TABLE) + " (" + QString(DB_INFO_COLUMN) + " varchar(255)," + QString(DB_DATA_COLUMN) + " varchar(255));");
+    query.prepare("CREATE TABLE IF NOT EXISTS " + QString(DB_INFO_TABLE) + " (" + QString(DB_INFO_COLUMN) + " varchar(255)," + QString(DB_DATA_COLUMN) + " varchar(255));");
     if (!query.exec()) {
         if (err)
             *err = query.lastError();

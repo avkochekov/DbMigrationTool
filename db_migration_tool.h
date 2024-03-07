@@ -4,7 +4,6 @@
 #include "DbMigrationTool_global.h"
 #include "db_version.h"
 
-#include <QString>
 #include <QMap>
 #include <QtSql/QSqlDatabase>
 
@@ -20,12 +19,13 @@ public:
     DbMigrationTool(const QString &type, const QString &address, const QString& username = QString(), const QString &password = QString());
 
     bool open();
+    void close();
     void update();
+    void addMetaInfo();
 
     void setBaselineScript(const QString &path);
     void addMigrationScript(const QString &path, const unsigned int major, const unsigned int minor = 0, const unsigned int update = 0);
     void addMigrationScript(const QString &path, const DbVersion version);
-
 
 private:
     bool runBaselineScripts(QSqlError *err = nullptr);
