@@ -44,8 +44,14 @@ void DbMigrationTool::close()
 void DbMigrationTool::update()
 {
     QSqlError err;
-    if (auto tables = db.tables(); tables.isEmpty()) {
+    const auto &tables = db.tables();
+    if (!tables.contains(DB_INFO_TABLE)) {
         addMetaInfo();
+    }
+
+    const auto &version = getVersion();
+    if (version == DbVersion()) {
+        m_firstInit = true;
 
         if (!runBaselineScripts(&err))
             throw DbMigrationException(QString("Running baseline script - failed: %1").arg(err.text()));
@@ -60,7 +66,6 @@ void DbMigrationTool::update()
 
 void DbMigrationTool::addMetaInfo()
 {
-    m_firstInit = true;
 
     QSqlError err;
 

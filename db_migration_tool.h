@@ -21,13 +21,13 @@ public:
     bool open();
     void close();
     void update();
-    void addMetaInfo();
 
     void setBaselineScript(const QString &path);
     void addMigrationScript(const QString &path, const unsigned int major, const unsigned int minor = 0, const unsigned int update = 0);
     void addMigrationScript(const QString &path, const DbVersion version);
 
 private:
+    void addMetaInfo();
     bool runBaselineScripts(QSqlError *err = nullptr);
     bool runMigrationScripts(QSqlError *err);
     std::optional<QStringList> readQueries(const QString &path);
